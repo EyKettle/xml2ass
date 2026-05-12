@@ -1,22 +1,30 @@
 pub fn main(init: std.process.Init) !void {
-    var diag: Diagnostic = .{};
-    const config = Config.parse(init.minimal.args, &diag) catch |err| switch (err) {
-        error.UnknownArgument => {
-            std.debug.print("Unknown argument: {s}\n", .{diag.by_arg});
-            return;
-        },
-        error.MissingValue => {
-            std.debug.print("Missing value for: {s}\n- {s}.\n", .{ diag.by_arg, diag.desc });
-            return;
-        },
-        error.InvalidValue => {
-            std.debug.print("Invalid value for: {s}\n- {s}.\n", .{ diag.by_arg, diag.desc });
-            return;
-        },
-    };
-
     const io = init.io;
     const alloc = init.arena.allocator();
+
+    var diag: Diagnostic = .{};
+    const config = Config.parse(alloc, init.minimal.args, &diag) catch |err| {
+        switch (err) {
+            error.UnknownArgument => {
+                std.debug.print("Unknown argument: {s}\n", .{diag.by_arg});
+            },
+            error.MissingValue => {
+                std.debug.print("Missing value for: {s}\n- {s}.\n", .{ diag.by_arg, diag.desc });
+            },
+            error.InvalidValue => {
+                std.debug.print("Invalid value for: {s}\n- {s}.\n", .{ diag.by_arg, diag.desc });
+            },
+            error.OutOfMemory => {
+                std.debug.print(
+                    \\Program stopped.
+                    \\- Out of memory.
+                    \\
+                , .{});
+            },
+        }
+        return;
+    };
+
     process(io, alloc, &config, &diag) catch |err| switch (err) {
         error.ReadFailed => {
             std.debug.print(

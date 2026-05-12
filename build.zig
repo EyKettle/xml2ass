@@ -13,7 +13,7 @@ pub fn build(b: *std.Build) !void {
             .strip = optimize != .Debug,
         }),
     });
-    native_exe.lto = if (optimize == .Debug) .none else .full;
+    native_exe.lto = if (optimize == .Debug and native_target.result.os.tag == .linux) .none else .full;
 
     b.installArtifact(native_exe);
 
@@ -40,20 +40,21 @@ pub fn build(b: *std.Build) !void {
         .{ .cpu_arch = .aarch64, .os_tag = .linux },
         .{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .gnu },
         .{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .musl },
-        .{ .cpu_arch = .x86_64, .os_tag = .windows },
+        .{ .cpu_arch = .x86_64, .os_tag = .windows, .abi = .gnu },
     };
 
     for (targets) |target| {
+        const resolved_target = b.resolveTargetQuery(target);
         const exe = b.addExecutable(.{
             .name = "xml2ass",
             .root_module = b.createModule(.{
                 .root_source_file = b.path("src/main.zig"),
-                .target = b.resolveTargetQuery(target),
+                .target = resolved_target,
                 .optimize = optimize,
                 .strip = true,
             }),
         });
-        exe.lto = if (optimize == .Debug) .none else .full;
+        exe.lto = if (optimize != .Debug and resolved_target.result.os.tag == .linux) .full else .none;
 
         const target_output = b.addInstallArtifact(exe, .{
             .dest_dir = .{

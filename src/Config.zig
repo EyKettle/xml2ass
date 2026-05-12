@@ -29,12 +29,15 @@ pub const ParseError = error{
     UnknownArgument,
     MissingValue,
     InvalidValue,
+    OutOfMemory,
 };
 
-pub fn parse(args: std.process.Args, diag: ?*Diagnostic) ParseError!Config {
+pub fn parse(alloc: std.mem.Allocator, args: std.process.Args, diag: ?*Diagnostic) ParseError!Config {
     var config: Config = .{};
 
-    var iter = args.iterate();
+    var iter = try args.iterateAllocator(alloc);
+    defer iter.deinit();
+
     _ = iter.next();
 
     const IterStatus = enum {
