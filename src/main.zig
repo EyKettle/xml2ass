@@ -46,8 +46,9 @@ pub fn main(init: std.process.Init) !void {
         error.PathNotAvailable => {
             std.debug.print(
                 \\Current working path is not available.
+                \\- error.{s}
                 \\
-            , .{});
+            , .{diag.desc});
         },
         error.InvalidPath => {
             std.debug.print(
@@ -115,19 +116,19 @@ fn process(io: std.Io, arena: std.mem.Allocator, config: *const Config, diag: ?*
         else
             std.Io.Dir.cwd().openDir(io, p, .{ .iterate = config.mode == .all }) catch return ParseError.InvalidPath
     else
-        std.Io.Dir.cwd();
+        std.Io.Dir.cwd().openDir(io, ".", .{ .iterate = config.mode == .all }) catch return ProcessError.PathNotAvailable;
 
     defer if (config.path != null) working_path.close(io);
 
     switch (config.mode) {
         .version => {
-            std.debug.print("0.1.0\n", .{});
+            std.debug.print("0.1.1\n", .{});
         },
         .help => {
             std.debug.print(
                 \\
                 \\| Xml2ass
-                \\| 0.1.0
+                \\| 0.1.1
                 \\
                 \\Commands:
                 \\  h, help, --help     Show command list
@@ -171,7 +172,10 @@ fn process(io: std.Io, arena: std.mem.Allocator, config: *const Config, diag: ?*
             var processed_danmaku: usize = 0;
 
             var iter = working_path.iterate();
-            while (iter.next(io) catch return ProcessError.PathNotAvailable) |entry| {
+            while (iter.next(io) catch |err| {
+                if (diag) |d| d.desc = @errorName(err);
+                return ProcessError.PathNotAvailable;
+            }) |entry| {
                 if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".xml")) {
                     var danmakus: std.ArrayList(Danmaku) = .empty;
                     try process_file(arena, io, &working_path, config, entry.name, try pth.renameExt(arena, entry.name, "ass"), &danmakus, diag);

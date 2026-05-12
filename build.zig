@@ -34,6 +34,16 @@ pub fn build(b: *std.Build) !void {
     const run_exe_tests = b.addRunArtifact(exe_test);
     test_step.dependOn(&run_exe_tests.step);
 
+    const release_step = b.step("release", "Make native release");
+    const natvie_output = b.addInstallArtifact(native_exe, .{
+        .dest_dir = .{
+            .override = .{
+                .custom = "native-bin",
+            },
+        },
+    });
+    release_step.dependOn(&natvie_output.step);
+
     const make_all_step = b.step("all", "Make all binaries");
     const targets: []const std.Target.Query = &.{
         .{ .cpu_arch = .aarch64, .os_tag = .macos },
