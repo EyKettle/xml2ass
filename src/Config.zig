@@ -1,5 +1,7 @@
 const Config = @This();
 
+pub const VERSION = "0.1.1";
+
 mode: ExecMode = .help,
 force: bool = false,
 input: ?[]const u8 = null,

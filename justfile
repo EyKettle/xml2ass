@@ -1,8 +1,8 @@
-native:
-    zig build release --release=fast
+default:
+    just release
 
 release:
-    zig build all --release=fast
+    zig build release --release=fast
 
-default:
-    just --list
+release-all:
+    zig build all --release=fast

@@ -122,13 +122,13 @@ fn process(io: std.Io, arena: std.mem.Allocator, config: *const Config, diag: ?*
 
     switch (config.mode) {
         .version => {
-            std.debug.print("0.1.1\n", .{});
+            std.debug.print("{s}\n", .{Config.VERSION});
         },
         .help => {
             std.debug.print(
                 \\
                 \\| Xml2ass
-                \\| 0.1.1
+                \\| {s}
                 \\
                 \\Commands:
                 \\  h, help, --help     Show command list
@@ -151,7 +151,7 @@ fn process(io: std.Io, arena: std.mem.Allocator, config: *const Config, diag: ?*
                 \\  --track-limit   Default: 16   | Number of max tracks
                 \\
                 \\
-            , .{});
+            , .{Config.VERSION});
         },
         .single => {
             if (config.input == null) return ParseError.EmptyInput;
